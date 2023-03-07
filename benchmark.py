@@ -35,6 +35,11 @@ parser.add_argument(
     default=20
 )
 parser.add_argument(
+    "--num-workers",
+    type=int,
+    default=2
+)
+parser.add_argument(
     "--learning-rate",
     type=float,
     default=1e-3
