@@ -50,7 +50,7 @@ def benchmark(
 
     loss_fn = nn.CrossEntropyLoss(reduction="mean")
     optimizer = optim.Adam(params=model.parameters(), lr=learning_rate, weight_decay=weight_decay)
-    scheduler = optim.lr_scheduler.CosineAnnealingLR(optimizer=optimizer, T_max=5, eta_min=1e-6, verbose=True)
+    scheduler = optim.lr_scheduler.CosineAnnealingLR(optimizer=optimizer, T_max=3, eta_min=1e-6, verbose=True)
 
     device = torch.device(device)
     model = model.to(device)
