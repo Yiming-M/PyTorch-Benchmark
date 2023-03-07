@@ -22,32 +22,32 @@ parser.add_argument(
 parser.add_argument(
     "--image-size",
     type=int,
-    default=os.path.join(".", "data")
+    default=224,
 )
 parser.add_argument(
     "--batch-size",
     type=int,
-    required=32
+    default=32
 )
 parser.add_argument(
     "--num-epochs",
     type=int,
-    required=20
+    default=20
 )
 parser.add_argument(
     "--learning-rate",
     type=float,
-    required=1e-3
+    default=1e-3
 )
 parser.add_argument(
     "--weight-decay",
     type=float,
-    required=1e-3
+    default=1e-3
 )
 parser.add_argument(
     "--device",
     type=int,
-    required=0
+    default=0
 )
 
 
