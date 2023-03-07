@@ -61,7 +61,8 @@ class ImageNette(Dataset):
         label = self.labels[idx]
 
         with Image.open(img_path) as img:
-            x = self.transform(img)
+            img_ = img.convert("RGB")
+            x = self.transform(img_)
 
         y = torch.tensor(label)
 
