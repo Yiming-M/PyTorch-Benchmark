@@ -30,7 +30,7 @@ def benchmark(
     assert isinstance(num_epochs, int) and num_epochs > 0
     assert isinstance(learning_rate, float) and learning_rate > 0.0
 
-    download = not os.path.exists(".", "imagenette2-320")
+    download = not os.path.exists(os.path.join(".", "imagenette2-320"))
     if download:
         print("Data not found. Now download it.")
     dataset = ImageNette(split=mode, img_size=img_size, download=download)
