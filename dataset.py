@@ -35,7 +35,7 @@ class ImageNette(Dataset):
         resize_transform = RandomResizedCrop if self.split == "train" else Resize
         self.transform = Compose([
             ToTensor(),
-            resize_transform(size=self.size),
+            resize_transform(size=(self.size, self.size),
             Normalize((0.485, 0.456, 0.406), (0.229, 0.224, 0.225)),
         ])
 
