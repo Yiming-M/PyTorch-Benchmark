@@ -10,11 +10,50 @@ import timm
 import os
 from time import time
 from tqdm import tqdm
+import argparse
+
+
+parser = argparse.ArgumentParser(description="Benchmark timm models on ImageNette.")
+parser.add_argument(
+    "--model",
+    type=str,
+    default="vgg16_bn"
+)
+parser.add_argument(
+    "--image-size",
+    type=int,
+    default=os.path.join(".", "data")
+)
+parser.add_argument(
+    "--batch-size",
+    type=int,
+    required=32
+)
+parser.add_argument(
+    "--num-epochs",
+    type=int,
+    required=20
+)
+parser.add_argument(
+    "--learning-rate",
+    type=float,
+    required=1e-3
+)
+parser.add_argument(
+    "--weight-decay",
+    type=float,
+    required=1e-3
+)
+parser.add_argument(
+    "--device",
+    type=int,
+    required=0
+)
 
 
 def benchmark(
     model: nn.Module = timm.create_model("vit_base_patch16_224", pretrained=True, num_classes=10),
-    img_size: int = 224,
+    image_size: int = 224,
     batch_size: int = 32,
     num_epochs: int = 20,
     num_workers: int = 2,
@@ -23,7 +62,7 @@ def benchmark(
     device: int = 0,
 ) -> None:
     assert isinstance(model, nn.Module)
-    assert isinstance(img_size, int) and img_size > 0
+    assert isinstance(image_size, int) and image_size > 0
     assert isinstance(batch_size, int) and batch_size > 0
     assert isinstance(num_epochs, int) and num_epochs > 0
     assert isinstance(learning_rate, float) and learning_rate > 0.0
@@ -31,7 +70,7 @@ def benchmark(
     download = not os.path.exists(os.path.join(".", "imagenette2-320"))
     if download:
         print("Data not found. Now download it.")
-    train_dataset = ImageNette(split="train", size=img_size, download=download)
+    train_dataset = ImageNette(split="train", size=image_size, download=download)
     train_dataloader = DataLoader(
         dataset=train_dataset,
         batch_size=batch_size,
@@ -39,7 +78,7 @@ def benchmark(
         num_workers=num_workers,
         pin_memory=num_workers > 0
     )
-    val_dataset = ImageNette(split="val", size=img_size, download=download)
+    val_dataset = ImageNette(split="val", size=image_size, download=download)
     val_dataloader = DataLoader(
         dataset=val_dataset,
         batch_size=batch_size,
@@ -78,9 +117,7 @@ def benchmark(
             time_ += toc - tic
             cost_.append(loss.detach().item())
 
-        scheduler.step()
         cost_ = np.mean(cost_)
-
         costs.append(cost_)
 
         model.eval()
@@ -103,9 +140,11 @@ def benchmark(
         y_preds = np.argmax(y_preds, axis=1)
         score = metrics.accuracy_score(y_pred=y_preds, y_true=y_trues)
 
-        print(f"cost: {cost_:.2f}; acc: {score:.2f}; time: {time_:.2f}")
+        print(f"cost: {cost_:.3f}; acc: {score:.3f}; time: {time_:.3f}")
         scores.append(score)
         times.append(time_)
+
+        scheduler.step()
 
     print("Benchmarking finished.")
     print(f"Costs: {costs}")
@@ -114,4 +153,15 @@ def benchmark(
 
 
 if __name__ == "__main__":
-    benchmark()
+    args = parser.parse_args()
+    args.model = timm.create_model(args.model, pretrained=True, num_classes=10)
+    benchmark(
+        model=args.model,
+        image_size=args.image_size,
+        batch_size=args.batch_size,
+        num_epochs=args.num_epochs,
+        num_workers=args.num_workers,
+        learning_rate=args.learning_rate,
+        weight_decay=args.weight_decay,
+        device=args.device
+    )
