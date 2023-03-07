@@ -57,7 +57,7 @@ def benchmark(
 def _train(model, dataloader, num_epochs, optimizer, scheduler, device):
     model.train()
 
-    loss_fn = nn.CrossEntropyLoss(reduce="mean")
+    loss_fn = nn.CrossEntropyLoss(reduction="mean")
     loss_fn = loss_fn.to(device)
 
     for i in range(num_epochs):
