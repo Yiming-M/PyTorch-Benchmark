@@ -86,7 +86,7 @@ def benchmark(
         model.eval()
         print("Evaluating")
         for (imgs, labels) in tqdm(val_dataloader):
-            imgs, labels = imgs.to(device)
+            imgs = imgs.to(device)
 
             tic = time()
             with torch.no_grad():
