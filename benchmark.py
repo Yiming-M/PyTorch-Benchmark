@@ -100,8 +100,8 @@ def benchmark(
     model = model.to(device)
     loss_fn = loss_fn.to(device)
 
+    costs, scores, times = [], [], []
     for i in range(num_epochs):
-        costs, scores, times = [], [], []
         cost_, y_preds, y_trues, time_ = [], [], [], 0.0
 
         model.train()
@@ -134,11 +134,10 @@ def benchmark(
             with torch.no_grad():
                 preds = torch.softmax(model(imgs), dim=1)
             toc = time()
+            time_ += toc - tic
 
             y_preds.append(preds.cpu().numpy())
             y_trues.append(labels.numpy())
-
-            time_ += toc - tic
 
         y_preds = np.concatenate(y_preds, axis=0)
         y_trues = np.concatenate(y_trues, axis=0)
@@ -152,9 +151,9 @@ def benchmark(
         scheduler.step()
 
     print("Benchmarking finished.")
-    print(f"Costs: {costs}")
-    print(f"Scores: {scores}")
-    print(f"Mean time: {np.round(np.mean(times), decimals=2)}")
+    print(f"Lowest cost: {np.round(min(costs), decimals=3)}")
+    print(f"Highest score: {np.round(max(scores), decimals=3)}")
+    print(f"Mean time: {np.round(np.mean(times), decimals=3)}")
 
 
 if __name__ == "__main__":
