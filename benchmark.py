@@ -33,7 +33,7 @@ def benchmark(
     download = not os.path.exists(os.path.join(".", "imagenette2-320"))
     if download:
         print("Data not found. Now download it.")
-    dataset = ImageNette(split=mode, img_size=img_size, download=download)
+    dataset = ImageNette(split=mode, size=img_size, download=download)
     dataloader = DataLoader(
         dataset=dataset,
         batch_size=batch_size,
