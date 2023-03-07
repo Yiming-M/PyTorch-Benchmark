@@ -64,7 +64,7 @@ def _train(model, dataloader, num_epochs, optimizer, scheduler, device):
         costs, times = [], []
         cost_, time_ = 0.0, 0.0
         for (imgs, labels) in tqdm(dataloader):
-            imgs, labels = imgs.to(device), labels.float().to(device)
+            imgs, labels = imgs.to(device), labels.long().to(device)
 
             tic = time()
             with torch.enable_grad():
