@@ -7,7 +7,6 @@ from sklearn import metrics
 from dataset import ImageNette
 import timm
 
-import os
 from time import time
 from tqdm import tqdm
 import argparse
@@ -17,37 +16,42 @@ parser = argparse.ArgumentParser(description="Benchmark timm models on ImageNett
 parser.add_argument(
     "--model",
     type=str,
-    default="vgg16_bn"
+    default="vit_base_patch16_224"
 )
 parser.add_argument(
-    "--image-size",
+    "--image_size",
     type=int,
     default=224,
 )
 parser.add_argument(
-    "--batch-size",
+    "--batch_size",
     type=int,
     default=32
 )
 parser.add_argument(
-    "--num-epochs",
+    "--num_epochs",
     type=int,
-    default=20
+    default=25
 )
 parser.add_argument(
-    "--num-workers",
+    "--num_workers",
     type=int,
-    default=2
+    default=4
 )
 parser.add_argument(
-    "--learning-rate",
+    "--learning_rate",
     type=float,
     default=1e-3
 )
 parser.add_argument(
-    "--weight-decay",
+    "--weight_decay",
     type=float,
     default=1e-3
+)
+parser.add_argument(
+    "--warmup_epochs",
+    type=int,
+    default=5
 )
 parser.add_argument(
     "--device",
@@ -64,6 +68,7 @@ def benchmark(
     num_workers: int = 2,
     learning_rate: float = 1e-3,
     weight_decay: float = 1e-2,
+    warmup_epochs: int = 5,
     device: int = 0,
 ) -> None:
     assert isinstance(model, nn.Module)
@@ -72,10 +77,7 @@ def benchmark(
     assert isinstance(num_epochs, int) and num_epochs > 0
     assert isinstance(learning_rate, float) and learning_rate > 0.0
 
-    download = not os.path.exists(os.path.join(".", "imagenette2-320"))
-    if download:
-        print("Data not found. Now download it.")
-    train_dataset = ImageNette(split="train", size=image_size, download=download)
+    train_dataset = ImageNette(split="train", size=image_size)
     train_dataloader = DataLoader(
         dataset=train_dataset,
         batch_size=batch_size,
@@ -83,7 +85,7 @@ def benchmark(
         num_workers=num_workers,
         pin_memory=num_workers > 0
     )
-    val_dataset = ImageNette(split="val", size=image_size, download=download)
+    val_dataset = ImageNette(split="val", size=image_size)
     val_dataloader = DataLoader(
         dataset=val_dataset,
         batch_size=batch_size,
@@ -92,8 +94,8 @@ def benchmark(
         pin_memory=num_workers > 0
     )
 
-    loss_fn = nn.CrossEntropyLoss(reduction="mean")
-    optimizer = optim.Adam(params=model.parameters(), lr=learning_rate, weight_decay=weight_decay)
+    loss_fn = nn.CrossEntropyLoss(reduction="mean").to(device)
+    optimizer = optim.Adam(params=filter(lambda p: p.requires_grad, model.parameters()), lr=learning_rate, weight_decay=weight_decay)
     scheduler = optim.lr_scheduler.CosineAnnealingLR(optimizer=optimizer, T_max=3, eta_min=1e-6, verbose=True)
 
     device = torch.device(device)
@@ -123,7 +125,10 @@ def benchmark(
             cost_.append(loss.detach().item())
 
         cost_ = np.mean(cost_)
-        costs.append(cost_)
+        scheduler.step()
+
+        if i >= warmup_epochs:
+            costs.append(cost_)
 
         model.eval()
         print("Evaluating")
@@ -145,10 +150,9 @@ def benchmark(
         score = metrics.accuracy_score(y_pred=y_preds, y_true=y_trues)
 
         print(f"cost: {cost_:.3f}; acc: {score:.3f}; time: {time_:.3f}")
-        scores.append(score)
-        times.append(time_)
-
-        scheduler.step()
+        if i >= warmup_epochs:
+            scores.append(score)
+            times.append(time_)
 
     print("Benchmarking finished.")
     print(f"Lowest cost: {np.round(min(costs), decimals=3)}")
